@@ -79,7 +79,35 @@ class _LandingPageState extends State<LandingPage> {
                               ),
                             ),
                           ],
-                        )
+                        ),
+
+                        GestureDetector(
+                          onTap: (){
+
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                              color: Colors.red,
+
+
+                              ),
+
+
+
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+
+                                ),
+                                "Offline Mode"
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
