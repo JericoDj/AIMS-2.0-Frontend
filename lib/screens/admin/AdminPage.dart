@@ -3,16 +3,16 @@ import 'package:get_storage/get_storage.dart';
 import 'package:go_router/go_router.dart';
 
 // IMPORT ALL SUBPAGES
-import 'admin/DashboardPage.dart';
-import 'admin/InventoryPage.dart';
-import 'admin/ManageAccountPage.dart';
-import 'admin/Offline/OfflineInventoryPage.dart';
-import 'admin/Offline/OfflineStockMonitoringPage.dart';
-import 'admin/Offline/OfflineTransactionsPage.dart';
+import '../Offline/OfflineInventoryPage.dart';
+import '../Offline/OfflineStockMonitoringPage.dart';
+import '../Offline/OfflineTransactionsPage.dart';
+import 'DashboardPage.dart';
+import 'InventoryPage.dart';
+import 'ManageAccountPage.dart';
 
-import 'admin/SettingsPage.dart';
-import 'admin/StockMonitoringPage.dart';
-import 'admin/TransactionsPage.dart';
+import 'SettingsPage.dart';
+import 'StockMonitoringPage.dart';
+import 'TransactionsPage.dart';
 
 // OFFLINE PAGES
 

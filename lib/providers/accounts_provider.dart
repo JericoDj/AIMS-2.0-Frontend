@@ -10,6 +10,8 @@ import '../utils/enums/role_enum.dart';
 class AccountsProvider extends ChangeNotifier {
   final GetStorage _box = GetStorage();
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   static const String _accountsKey = 'accounts';
   static const String _sessionKey = 'session';
 
@@ -29,6 +31,8 @@ class AccountsProvider extends ChangeNotifier {
     _loadAccounts();
     _loadSession();
   }
+
+
 
   /// ---------------- STORAGE ----------------
   void _loadAccounts() {
@@ -107,6 +111,18 @@ class AccountsProvider extends ChangeNotifier {
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       throw Exception((e));
+    }
+  }
+
+  Future<void> sendPasswordReset(String email) async {
+    if (email.isEmpty) {
+      throw Exception("Email is required");
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message ?? "Failed to send reset email");
     }
   }
 

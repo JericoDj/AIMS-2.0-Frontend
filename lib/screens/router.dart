@@ -1,9 +1,12 @@
-import 'package:aims2frontend/screens/LandingPage.dart';
+import 'package:aims2frontend/screens/landing/LandingPage.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'AdminPage.dart';
-import 'LoginPage.dart';
+import 'admin/AdminLogin.dart';
+import 'admin/AdminPage.dart';
+
+import 'auth/forgot_password_page.dart';
+import 'user/UserLoginPage.dart';
 import 'UserPage.dart';
 
 final appRouter = GoRouter(
@@ -12,6 +15,8 @@ final appRouter = GoRouter(
       path: '/',
       builder: (context, state) => const LandingPage(),
     ),
+
+
     GoRoute(
       path: '/admin',
       builder: (_, __) => const AdminPage(),
@@ -21,16 +26,23 @@ final appRouter = GoRouter(
       path: '/admin-offline',
       builder: (_, __) => const AdminPage(forceOffline: true),
     ),
-    GoRoute(
-      path: '/login',
-      builder: (context, state) {
-        final type = state.uri.queryParameters['type'] ?? 'user';
-        return LoginPage(type: type);
-      },
-    ),
+
     GoRoute(
       path: '/user',
       builder: (context, state) => const UserPage(),
+    ),
+
+
+    /// ADMIN LOGIN
+    GoRoute(
+      path: '/login/admin',
+      builder: (context, state) => const AdminLoginPage(),
+    ),
+
+    /// USER LOGIN
+    GoRoute(
+      path: '/login/user',
+      builder: (context, state) => const UserLoginPage(),
     ),
 
   ],
