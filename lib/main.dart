@@ -1,9 +1,12 @@
 import 'package:aims2frontend/providers/accounts_provider.dart';
 import 'package:aims2frontend/screens/router.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart' show Firebase;
+
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 import 'firebase_options.dart';
 
@@ -14,6 +17,12 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  final dir = await getApplicationDocumentsDirectory();
+  final storageDir = Directory(dir.path);
+
+  if (!await storageDir.exists()) {
+    await storageDir.create(recursive: true);
+  }
 
   await GetStorage.init();
 
