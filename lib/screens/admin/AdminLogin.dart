@@ -38,18 +38,21 @@ class AdminLoginPage extends StatelessWidget {
             throw Exception("Account not found");
           }
 
-          final account =
-          Account.fromMap(snapshot.data() as Map<String, dynamic>);
+          /// 3️⃣ Build Account from snapshot (WITH ID)
+          final account = Account.fromMap({
+            ...snapshot.data()!,
+            'id': snapshot.id, // ✅ ensure correct ID
+          });
 
-          /// 3️⃣ Verify ADMIN role
+          /// 4️⃣ Verify ADMIN role
           if (account.role != UserRole.admin) {
             throw Exception("Not authorized as admin");
           }
 
-          /// 4️⃣ Save session
-          accountsProvider.login(account.id);
+          /// 5️⃣ Save FULL session (Firestore-backed)
+          accountsProvider.setSession(account);
 
-          /// 5️⃣ Navigate AFTER success
+          /// 6️⃣ Navigate AFTER success
           context.go('/admin');
         } catch (e) {
           _showError(context, e.toString());
@@ -57,6 +60,9 @@ class AdminLoginPage extends StatelessWidget {
       },
     );
   }
+
+
+
 
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(

@@ -22,19 +22,36 @@ class ItemModel {
       id: doc.id,
       name: data['name'],
       category: data['category'],
-      batches: (data['batches'] as List)
+      batches: (data['batches'] as List? ?? [])
           .map((e) => StockBatch.fromMap(e))
           .toList(),
     );
   }
 
+  // ================= TOTAL STOCK =================
   int get totalStock =>
       batches.fold(0, (sum, b) => sum + b.quantity);
 
-  /// Sorted by expiry (FIFO)
+  // ================= FIFO (sorted by expiry) =================
   List<StockBatch> get fifoBatches {
     final sorted = [...batches];
     sorted.sort((a, b) => a.expiry.compareTo(b.expiry));
     return sorted;
+  }
+
+  // ================= NEAREST EXPIRY =================
+  DateTime? get nearestExpiry {
+    if (batches.isEmpty) return null;
+
+    final sorted = [...batches];
+    sorted.sort((a, b) => a.expiry.compareTo(b.expiry));
+    return sorted.first.expiry;
+  }
+
+  // ================= FORMATTED EXPIRY (UI) =================
+  String get nearestExpiryFormatted {
+    final exp = nearestExpiry;
+    if (exp == null) return '-';
+    return exp.toIso8601String().split('T').first; // YYYY-MM-DD
   }
 }

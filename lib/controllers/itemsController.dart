@@ -1,21 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
+
+import '../models/TransactionModel.dart';
+import 'inventoryTransactionController.dart';
 
 class InventoryController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  String normalizeItemName(String input) {
+    return input
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '') // remove spaces & symbols
+        .trim();
+  }
+
   // ================= CREATE =================
-  Future<void> createItem({
+  Future<String> createItem({
     required String name,
     required String category,
   }) async {
-    await _firestore.collection('items').add({
+    final doc = await _firestore.collection('items').add({
       'name': name,
+      'name_key': normalizeItemName(name),
       'category': category,
       'batches': [],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    await InventoryTransactionController().log(
+      type: TransactionType.createItem,
+      itemId: doc.id,
+      itemName: name,
+    );
+
+    return doc.id;
   }
+
+  Future<bool> itemNameExists(String name) async {
+    final snapshot = await _firestore
+        .collection('items')
+        .where('name_key', isEqualTo: normalizeItemName(name))
+        .limit(1)
+        .get();
+
+    debugPrint('🔍 itemNameExists("${name.toLowerCase()}")');
+    debugPrint('📦 docs length: ${snapshot.docs.length}');
+
+    if (snapshot.docs.isNotEmpty) {
+      debugPrint('❗ Existing item ID: ${snapshot.docs.first.id}');
+    }
+
+    return snapshot.docs.isNotEmpty;
+  }
+
+
+
+
 
   // ================= ADD STOCK (STACK BY EXPIRY) =================
   Future<void> addStock({
@@ -23,20 +64,36 @@ class InventoryController {
     required int quantity,
     required DateTime expiry,
   }) async {
-    final ref = _firestore.collection('items').doc(itemId);
+    debugPrint('🟢 [addStock] START (NO TRANSACTION)');
 
-    await _firestore.runTransaction((tx) async {
-      final snap = await tx.get(ref);
-      final data = snap.data()!;
-      List batches = List.from(data['batches']);
+    final ref = _firestore.collection('items').doc(itemId);
+    String itemName = '';
+
+    try {
+      debugPrint('🟡 [addStock] Fetching item document');
+
+      final snap = await ref.get();
+
+      if (!snap.exists) {
+        debugPrint('⚠️ [addStock] Item does not exist');
+        return;
+      }
+
+      final data = snap.data() as Map<String, dynamic>;
+      itemName = data['name'] ?? '';
+
+      final List<Map<String, dynamic>> batches =
+      List<Map<String, dynamic>>.from(data['batches'] ?? []);
 
       final expiryKey = expiry.toIso8601String();
 
-      final index =
-      batches.indexWhere((b) => b['expiry'] == expiryKey);
+      final index = batches.indexWhere(
+            (b) => b['expiry'] == expiryKey,
+      );
 
       if (index != -1) {
-        batches[index]['quantity'] += quantity;
+        final oldQty = (batches[index]['quantity'] as num).toInt();
+        batches[index]['quantity'] = oldQty + quantity;
       } else {
         batches.add({
           'quantity': quantity,
@@ -44,12 +101,40 @@ class InventoryController {
         });
       }
 
-      tx.update(ref, {
+      debugPrint('🟡 [addStock] Updating document');
+
+      await ref.update({
         'batches': batches,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-    });
+
+      debugPrint('🟢 [addStock] Document updated successfully');
+    } catch (e, s) {
+      debugPrint('❌ [addStock] FAILED: $e');
+      debugPrintStack(stackTrace: s);
+      return;
+    }
+
+    // Logging (still isolated)
+    try {
+      await InventoryTransactionController().log(
+        type: TransactionType.addStock,
+        itemId: itemId,
+        itemName: itemName,
+        quantity: quantity,
+        expiry: expiry,
+      );
+      debugPrint('🟢 [addStock] Transaction logged');
+    } catch (e) {
+      debugPrint('⚠️ [addStock] Logging failed: $e');
+    }
+
+    debugPrint('🟢 [addStock] END');
   }
+
+
+
+
 
   // ================= FIFO TRANSACTION =================
   Future<void> transactStockFIFO({
@@ -58,16 +143,22 @@ class InventoryController {
   }) async {
     final ref = _firestore.collection('items').doc(itemId);
 
+    String itemName = '';
+
     await _firestore.runTransaction((tx) async {
       final snap = await tx.get(ref);
       final data = snap.data()!;
+
+      itemName = data['name']; // capture for logging
+
       List<Map<String, dynamic>> batches =
       List<Map<String, dynamic>>.from(data['batches']);
 
-      // Sort by expiry (FIFO)
+      // FIFO → sort by expiry
       batches.sort(
-            (a, b) => DateTime.parse(a['expiry'])
-            .compareTo(DateTime.parse(b['expiry'])),
+            (a, b) =>
+            DateTime.parse(a['expiry'])
+                .compareTo(DateTime.parse(b['expiry'])),
       );
 
       int remaining = quantity;
@@ -98,10 +189,29 @@ class InventoryController {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+
+    // ✅ LOG DISPENSE ACTION
+    await InventoryTransactionController().log(
+      type: TransactionType.dispense,
+      itemId: itemId,
+      itemName: itemName,
+      quantity: quantity,
+    );
   }
 
+
   // ================= DELETE =================
-  Future<void> deleteItem(String itemId) async {
+  Future<void> deleteItem({
+    required String itemId,
+    required String itemName,
+  }) async {
     await _firestore.collection('items').doc(itemId).delete();
+
+    // ✅ LOG DELETE
+    await InventoryTransactionController().log(
+      type: TransactionType.deleteItem,
+      itemId: itemId,
+      itemName: itemName,
+    );
   }
 }

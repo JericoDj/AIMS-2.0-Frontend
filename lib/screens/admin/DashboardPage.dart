@@ -84,44 +84,47 @@ class DashboardPage extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   double cardWidth = constraints.maxWidth / 4 - 20;
-                  double cardHeight = screen.height * 0.145;
+                  double cardHeight = screen.height * 0.2;
 
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      DashboardStatCard(
-                        title: "Total Items",
-                        value: "245",
-                        icon: Icons.inventory_2,
-                        iconColor: Colors.green[800],
-                        width: cardWidth,
-                        height: cardHeight,
-                      ),
-                      DashboardStatCard(
-                        title: "Low Stock",
-                        value: "18",
-                        icon: Icons.warning_amber_rounded,
-                        iconColor: Colors.orange,
-                        width: cardWidth,
-                        height: cardHeight,
-                      ),
-                      DashboardStatCard(
-                        title: "Out of Stock",
-                        value: "5",
-                        icon: Icons.error_outline,
-                        iconColor: Colors.red,
-                        width: cardWidth,
-                        height: cardHeight,
-                      ),
-                      DashboardStatCard(
-                        title: "Expiring Soon",
-                        value: "9",
-                        icon: Icons.timer_outlined,
-                        iconColor: Colors.orange,
-                        width: cardWidth,
-                        height: cardHeight,
-                      ),
-                    ],
+                  return Container(
+                    height: cardHeight  ,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        DashboardStatCard(
+                          title: "Total Items",
+                          value: "245",
+                          icon: Icons.inventory_2,
+                          iconColor: Colors.green[800],
+                          width: cardWidth,
+                          height: cardHeight,
+                        ),
+                        DashboardStatCard(
+                          title: "Low Stock",
+                          value: "18",
+                          icon: Icons.warning_amber_rounded,
+                          iconColor: Colors.orange,
+                          width: cardWidth,
+                          height: cardHeight,
+                        ),
+                        DashboardStatCard(
+                          title: "Out of Stock",
+                          value: "5",
+                          icon: Icons.error_outline,
+                          iconColor: Colors.red,
+                          width: cardWidth,
+                          height: cardHeight,
+                        ),
+                        DashboardStatCard(
+                          title: "Expiring Soon",
+                          value: "9",
+                          icon: Icons.timer_outlined,
+                          iconColor: Colors.orange,
+                          width: cardWidth,
+                          height: cardHeight,
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),

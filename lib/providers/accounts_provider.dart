@@ -33,6 +33,15 @@ class AccountsProvider extends ChangeNotifier {
   }
 
 
+  /// Save session directly from Firestore account
+  void setSession(Account account) {
+    _currentUser = account;
+    _saveSession(account);
+    notifyListeners();
+  }
+
+
+
 
   /// ---------------- STORAGE ----------------
   void _loadAccounts() {
@@ -65,6 +74,11 @@ class AccountsProvider extends ChangeNotifier {
   }
 
   void _saveSession(Account user) {
+    print(user);
+    print(user.id);
+    print(user.fullName);
+    print(user.email);
+    print("user printing");
     _box.write(_sessionKey, user.toMap());
   }
 

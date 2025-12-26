@@ -1,4 +1,5 @@
 import 'package:aims2frontend/providers/accounts_provider.dart';
+import 'package:aims2frontend/providers/items_provider.dart';
 import 'package:aims2frontend/screens/router.dart';
 import 'package:firebase_core/firebase_core.dart' show Firebase;
 
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AccountsProvider()),
+        ChangeNotifierProvider(create: (_) => InventoryProvider()),
+
       ],
       child: MaterialApp.router(
         title: "AIMS 2.0 App",

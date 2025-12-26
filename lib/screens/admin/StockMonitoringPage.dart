@@ -1,11 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/items_provider.dart';
 import 'dialogs/AddItemDialog.dart';
 import 'dialogs/InventoryDialog.dart';
 import 'widgets/ReusableButton.dart';
 
-class StockMonitoringPage extends StatelessWidget {
+class StockMonitoringPage extends StatefulWidget {
   const StockMonitoringPage({super.key});
+
+  @override
+  State<StockMonitoringPage> createState() => _StockMonitoringPageState();
+}
+
+class _StockMonitoringPageState extends State<StockMonitoringPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Fetch inventory once when page opens
+    Future.microtask(() {
+      context.read<InventoryProvider>().fetchItems(refresh: true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +35,6 @@ class StockMonitoringPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-
             const Text(
               "Stock Monitoring",
               style: TextStyle(
@@ -30,13 +46,12 @@ class StockMonitoringPage extends StatelessWidget {
 
             Row(
               children: [
-
                 ReusableButton(
                   label: "Add\nItem",
                   onTap: () {
                     showDialog(
                       context: context,
-                      builder: (_) => const AddItemDialog(),
+                      builder: (_) => AddItemDialog(parentContext: context),
                     );
                   },
                 ),
@@ -85,17 +100,10 @@ class StockMonitoringPage extends StatelessWidget {
 
             const SizedBox(width: 20),
 
-            // LOW STOCK FILTER
             _FilterChip(label: "Low Stock", color: Colors.orange),
-
             const SizedBox(width: 10),
-
-            // OUT OF STOCK FILTER
             _FilterChip(label: "Out of Stock", color: Colors.red),
-
             const SizedBox(width: 10),
-
-            // NEAR EXPIRY FILTER
             _FilterChip(label: "Nearly Expiry", color: Colors.yellow[800]!),
           ],
         ),
@@ -133,35 +141,39 @@ class StockMonitoringPage extends StatelessWidget {
                   ),
                 ),
 
-                // BODY
+                // BODY (Provider-powered)
                 Expanded(
-                  child: ListView(
-                    children: const [
-                      StockRow(
-                        item: "Paracetamol",
-                        category: "Medicine",
-                        qty: 5,
-                        expiry: "2025-01-15",
-                      ),
-                      StockRow(
-                        item: "Ibuprofen",
-                        category: "Medicine",
-                        qty: 0,
-                        expiry: "2024-12-01",
-                      ),
-                      StockRow(
-                        item: "Vitamin C",
-                        category: "Supplement",
-                        qty: 45,
-                        expiry: "2024-12-29",
-                      ),
-                      StockRow(
-                        item: "Amoxicillin",
-                        category: "Antibiotic",
-                        qty: 12,
-                        expiry: "2025-09-10",
-                      ),
-                    ],
+                  child: Consumer<InventoryProvider>(
+                    builder: (context, inventory, _) {
+                      if (inventory.loading && inventory.items.isEmpty) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (inventory.items.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No items found",
+                            style: TextStyle(fontSize: 18),
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        itemCount: inventory.items.length,
+                        itemBuilder: (context, index) {
+                          final item = inventory.items[index];
+
+                          return StockRow(
+                            item: item.name,
+                            category: item.category,
+                            qty: item.totalStock,
+                            expiry: item.nearestExpiryFormatted,
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -228,7 +240,7 @@ class _HeaderCell extends StatelessWidget {
 }
 
 //
-// ========================= STOCK ROW WIDGET =========================
+// ========================= STOCK ROW =========================
 //
 class StockRow extends StatelessWidget {
   final String item;
@@ -244,16 +256,12 @@ class StockRow extends StatelessWidget {
     required this.expiry,
   });
 
-  // Stock status logic
   String _getStatus() {
     if (qty == 0) return "Out of Stock";
     if (qty <= 10) return "Low Stock";
 
-    // Simulate "nearly expiry" by example
-    // In real logic we compare date difference
-    DateTime today = DateTime.now();
-    DateTime exp = DateTime.parse(expiry);
-    if (exp.difference(today).inDays <= 30) {
+    final exp = DateTime.tryParse(expiry);
+    if (exp != null && exp.difference(DateTime.now()).inDays <= 30) {
       return "Nearly Expiry";
     }
 
@@ -280,7 +288,6 @@ class StockRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
-
         border: Border(
           bottom: BorderSide(
             color: Colors.white.withOpacity(0.7),
@@ -295,7 +302,6 @@ class StockRow extends StatelessWidget {
           _Cell(qty.toString(), flex: 2),
           _Cell(expiry, flex: 2),
 
-          // STATUS BADGE
           Expanded(
             flex: 2,
             child: Container(
@@ -303,10 +309,7 @@ class StockRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _statusColor().withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: _statusColor(),
-                  width: 1,
-                ),
+                border: Border.all(color: _statusColor()),
               ),
               child: Text(
                 _getStatus(),
